@@ -1,0 +1,11 @@
+[
+  {
+    "id": "msg-1781488544088-ecxii4t36",
+    "name": "Test User",
+    "email": "test@example.com",
+    "subject": "Hello",
+    "message": "This is a test message to verify the contact form.",
+    "timestamp": "2026-06-15T01:55:44.088Z",
+    "read": false
+  }
+]
