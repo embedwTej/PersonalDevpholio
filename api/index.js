@@ -14,7 +14,7 @@ const MESSAGES_FILE = process.env.VERCEL
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '..')));
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Utility to read messages from JSON file
 function readMessages() {
@@ -158,7 +158,7 @@ app.delete('/api/messages/:id', (req, res) => {
 
 // Serve index.html for all other routes to support client routing if any
 app.use((req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'index.html'));
+    res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 
 module.exports = app;
