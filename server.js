@@ -7,7 +7,9 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const MESSAGES_FILE = path.join(__dirname, 'messages.json');
+const MESSAGES_FILE = process.env.VERCEL
+    ? path.join('/tmp', 'messages.json')
+    : path.join(__dirname, 'messages.json');
 
 // Middleware
 app.use(cors());
@@ -162,10 +164,14 @@ app.use((req, res) => {
 });
 
 // Start Server
-app.listen(PORT, () => {
-    console.log(`=======================================================`);
-    console.log(`  PORTFOLIO SYSTEM ENGINE ONLINE                       `);
-    console.log(`  Access Local Interface: http://localhost:${PORT}      `);
-    console.log(`  Database File Path: ${MESSAGES_FILE}                 `);
-    console.log(`=======================================================`);
-});
+if (!process.env.VERCEL) {
+    app.listen(PORT, () => {
+        console.log(`=======================================================`);
+        console.log(`  PORTFOLIO SYSTEM ENGINE ONLINE                       `);
+        console.log(`  Access Local Interface: http://localhost:${PORT}      `);
+        console.log(`  Database File Path: ${MESSAGES_FILE}                 `);
+        console.log(`=======================================================`);
+    });
+}
+
+module.exports = app;
