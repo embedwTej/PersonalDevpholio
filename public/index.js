@@ -1397,7 +1397,42 @@ function initLocationMap() {
 }
 
 // Initialize all effects
+let lenis;
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize Lenis Smooth Scroll
+    if (typeof Lenis !== 'undefined') {
+        lenis = new Lenis({
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+            direction: 'vertical',
+            gestureDirection: 'vertical',
+            smooth: true,
+            mouseMultiplier: 1,
+            smoothTouch: false,
+            touchMultiplier: 2,
+            infinite: false,
+        });
+
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+
+        requestAnimationFrame(raf);
+        
+        // Let Lenis handle standard internal anchor jumps
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    lenis.scrollTo(target);
+                }
+            });
+        });
+    }
+
     initLocationMap();
     new SpiderWebBackground();
     new SpiderCursorEffect();
@@ -1406,6 +1441,9 @@ document.addEventListener('DOMContentLoaded', () => {
     seedDefaultData();
     renderProjects();
     renderAchievements();
+    
+    // Initialize interactive skills slider
+    initSkillsSlider();
     
     // Initialize admin controller and mini-game
     initAdminConsole();
@@ -1418,7 +1456,27 @@ document.addEventListener('DOMContentLoaded', () => {
         spideyGameBtn.addEventListener('click', () => {
             gameModal.classList.add('active');
             document.body.style.overflow = 'hidden';
+            if (lenis) lenis.stop(); // Stop Lenis scrolling
             spideyGame.resizeCanvas();
+        });
+    }
+
+    // Project Details modal close event listener
+    const modalCloseBtn = document.getElementById('modal-close');
+    const projectModal = document.getElementById('project-modal');
+    if (modalCloseBtn && projectModal) {
+        modalCloseBtn.addEventListener('click', () => {
+            projectModal.classList.remove('active');
+            document.body.style.overflow = '';
+            if (lenis) lenis.start(); // Resume Lenis scrolling
+        });
+        
+        projectModal.addEventListener('click', (e) => {
+            if (e.target === projectModal) {
+                projectModal.classList.remove('active');
+                document.body.style.overflow = '';
+                if (lenis) lenis.start(); // Resume Lenis scrolling
+            }
         });
     }
 });
@@ -1702,6 +1760,7 @@ document.addEventListener('click', (e) => {
                 if (modalEl) {
                     modalEl.classList.add('active');
                     document.body.style.overflow = 'hidden';
+                    if (lenis) lenis.stop(); // Stop Lenis scrolling
                 }
             }
         }
@@ -1736,6 +1795,7 @@ function initAdminConsole() {
             errorMsg.textContent = '';
             loginModal.classList.add('active');
             document.body.style.overflow = 'hidden';
+            if (lenis) lenis.stop(); // Stop Lenis scrolling
         });
     }
     
@@ -1743,6 +1803,7 @@ function initAdminConsole() {
         loginClose.addEventListener('click', () => {
             loginModal.classList.remove('active');
             document.body.style.overflow = '';
+            if (lenis) lenis.start(); // Resume Lenis scrolling
         });
     }
     
@@ -1770,6 +1831,7 @@ function initAdminConsole() {
         closeDashboardBtn.addEventListener('click', () => {
             dashboardModal.classList.remove('active');
             document.body.style.overflow = '';
+            if (lenis) lenis.start(); // Resume Lenis scrolling
         });
     }
     
@@ -2383,6 +2445,7 @@ class SpideyTargetPracticeGame {
         clearInterval(this.timerInterval);
         if (this.modal) this.modal.classList.remove('active');
         document.body.style.overflow = '';
+        if (lenis) lenis.start(); // Resume Lenis scrolling
     }
     
     drawSpider(spider) {
@@ -2524,5 +2587,87 @@ class SpideyTargetPracticeGame {
         
         requestAnimationFrame(() => this.loop());
     }
+}
+
+/* ==========================================================================
+   INTERACTIVE SKILLS SLIDER & CATEGORY PICKER
+   ========================================================================== */
+const SKILLS_DATA = {
+    firmware: [
+        { name: "Embedded C / C++", percent: "90%" },
+        { name: "Python", percent: "80%" },
+        { name: "JavaScript (ES6+)", percent: "85%" },
+        { name: "HTML5 / CSS3 Layouts", percent: "90%" }
+    ],
+    hardware: [
+        { name: "ESP32 / ESP8266 Dev", percent: "95%" },
+        { name: "Single-Board Computers", percent: "85%" },
+        { name: "Edge & Low-Power MCUs", percent: "90%" },
+        { name: "Sensor Interfacing & GPIO", percent: "90%" }
+    ],
+    protocols: [
+        { name: "MQTT Telemetry", percent: "90%" },
+        { name: "Wi-Fi (802.11) & P2P", percent: "85%" },
+        { name: "Serial (UART, SPI, I2C)", percent: "90%" },
+        { name: "RFID & NFC Systems", percent: "90%" }
+    ],
+    clouds: [
+        { name: "Telemetry Dashboards", percent: "85%" },
+        { name: "Biometric Authentication", percent: "90%" },
+        { name: "Device Management & OTA", percent: "80%" },
+        { name: "Data Logging & DB Links", percent: "80%" }
+    ],
+    tools: [
+        { name: "Embedded IDEs", percent: "90%" },
+        { name: "Git & Version Control", percent: "85%" },
+        { name: "Team Leadership", percent: "95%" },
+        { name: "Technical Training / Docs", percent: "85%" }
+    ]
+};
+
+function initSkillsSlider() {
+    const picker = document.querySelector('.skills-category-picker');
+    const bgCount = document.getElementById('skills-bg-count');
+    const showcaseList = document.getElementById('skills-showcase-list');
+    if (!picker || !showcaseList) return;
+
+    const renderCategory = (categoryKey) => {
+        const skills = SKILLS_DATA[categoryKey] || [];
+        if (bgCount) {
+            bgCount.textContent = String(skills.length).padStart(2, '0');
+        }
+        
+        showcaseList.innerHTML = skills.map((s, index) => `
+            <div class="skills-showcase-item" style="animation-delay: ${index * 80}ms;">
+                <div class="skill-info">
+                    <span class="skill-name">${s.name}</span>
+                    <span class="skill-percent">${s.percent}</span>
+                </div>
+                <div class="skill-bar-container">
+                    <div class="skill-bar-fill" style="width: 0%;"></div>
+                </div>
+            </div>
+        `).join('');
+
+        setTimeout(() => {
+            showcaseList.querySelectorAll('.skill-bar-fill').forEach((bar, i) => {
+                if (skills[i]) {
+                    bar.style.width = skills[i].percent;
+                }
+            });
+        }, 50);
+    };
+
+    // Initial render
+    renderCategory('firmware');
+
+    picker.querySelectorAll('.skill-category-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            picker.querySelectorAll('.skill-category-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const category = btn.getAttribute('data-category');
+            renderCategory(category);
+        });
+    });
 }
 
